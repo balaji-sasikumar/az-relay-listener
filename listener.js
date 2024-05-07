@@ -23,10 +23,15 @@ const createListener = (requestUrl, keyrule, path, key) => {
         body += chunk.toString();
       });
       req.on("end", async () => {
-        console.log(body);
-        const response = await axios.post(requestUrl, body);
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(response.data));
+        try {
+          const response = await axios.post(requestUrl, body);
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify(response.data));
+        } catch (error) {
+          console.error("Error handling request:", error);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ message: "Internal Server Error" }));
+        }
       });
     }
   );
@@ -51,11 +56,11 @@ server1.on("error", (err) => {
   console.log(utils.inspect(err));
 });
 server1.on("listening", () => {
-  console.log("listening");
+  console.log("server1 listening");
 });
 server2.on("error", (err) => {
   console.log(utils.inspect(err));
 });
 server2.on("listening", () => {
-  console.log("listening");
+  console.log("server2 listening");
 });
