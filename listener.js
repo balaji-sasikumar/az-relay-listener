@@ -1,38 +1,61 @@
 const https = require("hyco-https");
 const axios = require("axios");
 const utils = require("util");
+
 const ns = process.env.ns;
-const path = process.env.path;
-const keyrule = process.env.keyrule;
-const key = process.env.key;
+const keyrule1 = process.env.keyrule1;
+const path1 = process.env.path1;
+const key1 = process.env.key1;
+const keyrule2 = process.env.keyrule2;
+const path2 = process.env.path2;
+const key2 = process.env.key2;
 
-var uri = https.createRelayListenUri(ns, path);
-var server = https.createRelayedServer(
-  {
-    server: uri,
-    token: () => https.createRelayToken(uri, keyrule, key),
-  },
-  async (req, res) => {
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk.toString();
-    });
-    req.on("end", async () => {
-      console.log(body);
-      const response = await axios.post(
-        "http://localhost:7071/api/queryTool",
-        body
-      );
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(response.data));
-    });
-  }
+const createListener = (requestUrl, keyrule, path, key) => {
+  var uri = https.createRelayListenUri(ns, path);
+  return https.createRelayedServer(
+    {
+      server: uri,
+      token: () => https.createRelayToken(uri, keyrule, key),
+    },
+    async (req, res) => {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", async () => {
+        console.log(body);
+        const response = await axios.post(requestUrl, body);
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(response.data));
+      });
+    }
+  );
+};
+
+var server1 = createListener(
+  "http://localhost:7071/api/queryTool",
+  keyrule1,
+  path1,
+  key1
 );
-server.listen();
+var server2 = createListener(
+  "http://localhost:7072/api/sumavision-http-trigger",
+  keyrule2,
+  path2,
+  key2
+);
+server1.listen();
+server2.listen();
 
-server.on("error", (err) => {
+server1.on("error", (err) => {
   console.log(utils.inspect(err));
 });
-server.on("listening", () => {
+server1.on("listening", () => {
+  console.log("listening");
+});
+server2.on("error", (err) => {
+  console.log(utils.inspect(err));
+});
+server2.on("listening", () => {
   console.log("listening");
 });
